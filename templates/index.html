@@ -148,6 +148,11 @@
             display: none;
         }
 
+        .result-container.covid19 {
+            background: #fff3cd;
+            border: 2px solid #ffc107;
+        }
+
         .result-container.normal {
             background: #d4edda;
             border: 2px solid #28a745;
@@ -158,11 +163,20 @@
             border: 2px solid #dc3545;
         }
 
+        .result-container.turberculosis {
+            background: #d1ecf1;
+            border: 2px solid #17a2b8;
+        }
+
         .result-title {
             font-size: 24px;
             font-weight: bold;
-            margin-bottom: 10px;
+            margin-bottom: 15px;
             text-align: center;
+        }
+
+        .result-container.covid19 .result-title {
+            color: #ffc107;
         }
 
         .result-container.normal .result-title {
@@ -173,10 +187,51 @@
             color: #dc3545;
         }
 
+        .result-container.turberculosis .result-title {
+            color: #17a2b8;
+        }
+
         .confidence {
             text-align: center;
             font-size: 18px;
             color: #333;
+            margin-bottom: 20px;
+            font-weight: 600;
+        }
+
+        .all-predictions {
+            background: rgba(255, 255, 255, 0.7);
+            border-radius: 10px;
+            padding: 15px;
+            margin-top: 15px;
+        }
+
+        .all-predictions h3 {
+            font-size: 16px;
+            color: #333;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+
+        .prediction-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+        }
+
+        .prediction-item:last-child {
+            border-bottom: none;
+        }
+
+        .prediction-label {
+            font-weight: 600;
+            color: #333;
+        }
+
+        .prediction-value {
+            color: #666;
         }
 
         .loading {
@@ -239,6 +294,10 @@
         <div class="result-container" id="resultContainer">
             <div class="result-title" id="resultTitle"></div>
             <div class="confidence" id="confidence"></div>
+            <div class="all-predictions" id="allPredictions">
+                <h3>ความน่าจะเป็นทั้งหมด</h3>
+                <div id="predictionsList"></div>
+            </div>
         </div>
 
         <div class="error-message" id="errorMessage"></div>
@@ -256,8 +315,17 @@
         const resultTitle = document.getElementById('resultTitle');
         const confidence = document.getElementById('confidence');
         const errorMessage = document.getElementById('errorMessage');
+        const predictionsList = document.getElementById('predictionsList');
 
         let selectedFile = null;
+
+        // กำหนดข้อความและไอคอนสำหรับแต่ละ class
+        const classInfo = {
+            'COVID19': { emoji: '🦠', text: 'COVID-19', class: 'covid19' },
+            'NORMAL': { emoji: '✅', text: 'ปกติ (Normal)', class: 'normal' },
+            'PNEUMONIA': { emoji: '⚠️', text: 'ปอดอักเสบ (Pneumonia)', class: 'pneumonia' },
+            'TURBERCULOSIS': { emoji: '🫁', text: 'วัณโรค (Tuberculosis)', class: 'turberculosis' }
+        };
 
         // คลิกที่ upload area
         uploadArea.addEventListener('click', () => {
@@ -334,20 +402,48 @@
                 });
 
                 const data = await response.json();
+                
+                // Debug: แสดงข้อมูลที่ได้รับจาก API
+                console.log('📊 ข้อมูลจาก API:', data);
+                console.log('📊 prediction:', data.prediction);
+                console.log('📊 confidence:', data.confidence);
+                console.log('📊 all_predictions:', data.all_predictions);
 
                 if (response.ok) {
                     // แสดงผลลัพธ์
-                    resultContainer.classList.remove('normal', 'pneumonia');
+                    resultContainer.classList.remove('covid19', 'normal', 'pneumonia', 'turberculosis');
                     
-                    if (data.prediction === 'Normal') {
-                        resultContainer.classList.add('normal');
-                        resultTitle.textContent = '✅ ปกติ (Normal)';
-                    } else {
-                        resultContainer.classList.add('pneumonia');
-                        resultTitle.textContent = '⚠️ พบความผิดปกติ (Pneumonia)';
+                    // ตั้งค่าผลลัพธ์หลัก
+                    const info = classInfo[data.prediction];
+                    if (info) {
+                        resultContainer.classList.add(info.class);
+                        resultTitle.textContent = `${info.emoji} ${info.text}`;
                     }
                     
                     confidence.textContent = `ความมั่นใจ: ${data.confidence}%`;
+                    
+                    // แสดงความน่าจะเป็นทั้งหมด
+                    if (data.all_predictions) {
+                        predictionsList.innerHTML = '';
+                        Object.entries(data.all_predictions).forEach(([className, value]) => {
+                            const item = document.createElement('div');
+                            item.className = 'prediction-item';
+                            
+                            const label = document.createElement('span');
+                            label.className = 'prediction-label';
+                            const info = classInfo[className];
+                            label.textContent = info ? `${info.emoji} ${info.text}` : className;
+                            
+                            const valueSpan = document.createElement('span');
+                            valueSpan.className = 'prediction-value';
+                            valueSpan.textContent = `${value}%`;
+                            
+                            item.appendChild(label);
+                            item.appendChild(valueSpan);
+                            predictionsList.appendChild(item);
+                        });
+                    }
+                    
                     resultContainer.style.display = 'block';
                 } else {
                     showError(data.error || 'เกิดข้อผิดพลาดในการวิเคราะห์');

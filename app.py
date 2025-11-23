@@ -40,7 +40,7 @@ def load_model_lazy():
             try:
                 # โหลดด้วย custom_object_scope เพื่อแก้ปัญหา DTypePolicy
                 with keras.utils.custom_object_scope({'DTypePolicy': keras.mixed_precision.Policy}):
-                    model = keras.models.load_model('my_model_new.h5', compile=False)
+                    model = keras.models.load_model('ChestXRayModel.h5', compile=False)
                 print("✅ โหลด model สำเร็จ!")
                 print(f"📊 Model input shape: {model.input_shape}")
             finally:
@@ -64,8 +64,8 @@ def prepare_image(img):
     if img.mode != 'L':
         img = img.convert('L')
     
-    # ปรับขนาดรูปภาพเป็น 350x350 (ตาม input shape ของ model)
-    img = img.resize((350, 350))
+    # ปรับขนาดรูปภาพเป็น 224x224 (ตาม input shape ของ model)
+    img = img.resize((224, 224))
     
     # แปลงเป็น array
     img_array = np.array(img)
@@ -73,7 +73,7 @@ def prepare_image(img):
     # Normalize ค่า pixel (0-255 -> 0-1)
     img_array = img_array / 255.0
     
-    # เพิ่ม dimension ให้เป็น (1, 350, 350, 1)
+    # เพิ่ม dimension ให้เป็น (1, 224, 224, 1)
     img_array = np.expand_dims(img_array, axis=0)
     img_array = np.expand_dims(img_array, axis=-1)
     
@@ -109,22 +109,29 @@ def predict():
             # ทำนาย
             prediction = current_model.predict(processed_img)
             
-            # ใช้ threshold 0.5 เหมือนใน Colab
-            pred_value = float(prediction[0][0])
-            pred_class = 1 if pred_value > 0.5 else 0
+            # กำหนด class labels ตามที่ train มา
+            # class_indices = {'COVID19': 0, 'NORMAL': 1, 'PNEUMONIA': 2, 'TURBERCULOSIS': 3}
+            class_labels = ['COVID19', 'NORMAL', 'PNEUMONIA', 'TURBERCULOSIS']
             
-            # กำหนด labels (ตรวจสอบว่า class 0 กับ 1 คืออะไร)
-            # ปกติ class_indices จะเป็น {'NORMAL': 0, 'PNEUMONIA': 1} หรือในลำดับอื่น
-            if pred_class == 0:
-                result = 'Normal'
-                confidence_percent = (1 - pred_value) * 100
-            else:
-                result = 'Pneumonia'
-                confidence_percent = pred_value * 100
+            # หา class ที่มีความน่าจะเป็นสูงสุด
+            pred_class = np.argmax(prediction[0])
+            confidence_percent = float(prediction[0][pred_class]) * 100
+            result = class_labels[pred_class]
+            
+            # สร้าง dictionary สำหรับแสดงความน่าจะเป็นทุก class
+            all_predictions = {
+                class_labels[i]: round(float(prediction[0][i]) * 100, 2) 
+                for i in range(len(class_labels))
+            }
+            
+            print(f"🔍 ผลการทำนายดิบ: {prediction[0]}")
+            print(f"🔍 คลาสที่ทำนาย: {result} ({pred_class}) - Confidence: {confidence_percent:.2f}%")
+            print(f"🔍 ทุก class: {all_predictions}")
             
             return jsonify({
                 'prediction': result,
-                'confidence': round(confidence_percent, 2)
+                'confidence': round(confidence_percent, 2),
+                'all_predictions': all_predictions
             })
             
         except Exception as e:
