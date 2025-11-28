@@ -1,9 +1,10 @@
 <!DOCTYPE html>
 <html lang="th">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chest X-Ray Analysis</title>
+    <title>AI X-Ray Report Generator</title>
     <style>
         * {
             margin: 0;
@@ -12,73 +13,99 @@
         }
 
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+            background: #0a0e1a;
+            color: #e4e4e7;
             min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
             padding: 20px;
         }
 
         .container {
-            background: white;
-            border-radius: 20px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-            max-width: 600px;
-            width: 100%;
-            padding: 40px;
+            max-width: 1400px;
+            margin: 0 auto;
         }
 
-        h1 {
-            color: #333;
+        .header {
             text-align: center;
+            margin-bottom: 40px;
+            padding: 40px 20px 20px;
+        }
+
+        .header h1 {
+            font-size: 42px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #60a5fa 0%, #a78bfa 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
             margin-bottom: 10px;
-            font-size: 28px;
         }
 
-        .subtitle {
-            text-align: center;
-            color: #666;
-            margin-bottom: 30px;
-            font-size: 14px;
+        .content-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+            margin-bottom: 24px;
+        }
+
+        .section {
+            background: #1a1f2e;
+            border: 1px solid #2d3548;
+            border-radius: 12px;
+            padding: 24px;
+        }
+
+        .section-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: #f4f4f5;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
 
         .upload-area {
-            border: 3px dashed #667eea;
-            border-radius: 15px;
-            padding: 40px;
+            border: 2px dashed #3b4252;
+            border-radius: 12px;
+            padding: 60px 20px;
             text-align: center;
             cursor: pointer;
             transition: all 0.3s ease;
-            background: #f8f9ff;
+            background: #252b3b;
+            position: relative;
+            display: block;
+        }
+
+        .upload-area.hidden {
+            display: none;
         }
 
         .upload-area:hover {
-            border-color: #764ba2;
-            background: #f0f2ff;
+            border-color: #60a5fa;
+            background: #2a3042;
         }
 
         .upload-area.dragover {
-            border-color: #764ba2;
-            background: #e8ebff;
-            transform: scale(1.02);
+            border-color: #60a5fa;
+            background: #2d3548;
+            transform: scale(1.01);
         }
 
         .upload-icon {
-            font-size: 50px;
-            margin-bottom: 15px;
+            font-size: 48px;
+            margin-bottom: 16px;
+            opacity: 0.6;
         }
 
         .upload-text {
-            color: #667eea;
-            font-size: 18px;
-            font-weight: 600;
-            margin-bottom: 10px;
+            color: #a1a1aa;
+            font-size: 16px;
+            margin-bottom: 8px;
         }
 
         .upload-subtext {
-            color: #999;
+            color: #71717a;
             font-size: 14px;
         }
 
@@ -87,252 +114,493 @@
         }
 
         .preview-container {
-            margin-top: 30px;
             display: none;
+        }
+
+        .file-list-title {
+            color: #f4f4f5;
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 12px;
+        }
+
+        .file-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            background: #252b3b;
+            border-radius: 8px;
+            margin-bottom: 16px;
+        }
+
+        .file-thumbnail {
+            width: 60px;
+            height: 60px;
+            border-radius: 6px;
+            object-fit: cover;
+            border: 1px solid #3b4252;
+        }
+
+        .file-info {
+            flex: 1;
+        }
+
+        .file-name {
+            color: #f4f4f5;
+            font-size: 14px;
+            margin-bottom: 4px;
+            word-break: break-all;
+        }
+
+        .file-size {
+            color: #a1a1aa;
+            font-size: 13px;
+        }
+
+        .file-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .file-action-btn {
+            width: 36px;
+            height: 36px;
+            padding: 0;
+            background: transparent;
+            border: 1px solid #3b4252;
+            border-radius: 6px;
+            color: #a1a1aa;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+        }
+
+        .file-action-btn:hover {
+            background: #3b4252;
+            color: #f4f4f5;
         }
 
         .preview-image {
             width: 100%;
-            border-radius: 10px;
-            margin-bottom: 20px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+            margin-bottom: 16px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+            display: none;
         }
 
         .button-group {
             display: flex;
-            gap: 10px;
-            margin-top: 20px;
+            gap: 12px;
         }
 
         button {
-            flex: 1;
-            padding: 15px;
+            padding: 12px 24px;
             border: none;
-            border-radius: 10px;
-            font-size: 16px;
+            border-radius: 8px;
+            font-size: 15px;
             font-weight: 600;
             cursor: pointer;
-            transition: all 0.3s ease;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            justify-content: center;
         }
 
         .analyze-btn {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            flex: 1;
+            width: 100%;
+            background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
             color: white;
         }
 
-        .analyze-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        .analyze-btn:hover:not(:disabled) {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
         }
 
         .analyze-btn:disabled {
-            background: #ccc;
+            background: #3f3f46;
             cursor: not-allowed;
-            transform: none;
+            opacity: 0.5;
         }
 
         .clear-btn {
-            background: #ff6b6b;
-            color: white;
+            background: #3f3f46;
+            color: #e4e4e7;
         }
 
         .clear-btn:hover {
-            background: #ff5252;
-            transform: translateY(-2px);
+            background: #52525b;
         }
 
-        .result-container {
-            margin-top: 30px;
-            padding: 25px;
-            border-radius: 15px;
+        .info-box {
+            background: #252b3b;
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 16px;
+        }
+
+        .info-box label {
+            display: block;
+            color: #a1a1aa;
+            font-size: 14px;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .info-box textarea {
+            width: 100%;
+            background: #1a1f2e;
+            border: 1px solid #3b4252;
+            border-radius: 6px;
+            padding: 12px;
+            color: #e4e4e7;
+            font-family: inherit;
+            font-size: 14px;
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .info-box textarea:focus {
+            outline: none;
+            border-color: #60a5fa;
+        }
+
+        .info-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px;
+            background: #252b3b;
+            border-radius: 6px;
+            font-size: 14px;
+            color: #a1a1aa;
+        }
+
+        .result-section {
+            background: #1a1f2e;
+            border: 1px solid #2d3548;
+            border-radius: 12px;
+            padding: 24px;
+            min-height: 400px;
+        }
+
+        .result-placeholder {
+            text-align: center;
+            padding: 60px 20px;
+            color: #71717a;
+        }
+
+        .result-placeholder-icon {
+            font-size: 64px;
+            margin-bottom: 16px;
+            opacity: 0.3;
+        }
+
+        .result-content {
             display: none;
         }
 
-        .result-container.covid19 {
-            background: #fff3cd;
-            border: 2px solid #ffc107;
+        .result-content.active {
+            display: block;
         }
 
-        .result-container.normal {
-            background: #d4edda;
-            border: 2px solid #28a745;
-        }
-
-        .result-container.pneumonia {
-            background: #f8d7da;
-            border: 2px solid #dc3545;
-        }
-
-        .result-container.turberculosis {
-            background: #d1ecf1;
-            border: 2px solid #17a2b8;
+        .result-header {
+            text-align: center;
+            margin-bottom: 24px;
+            padding-bottom: 24px;
+            border-bottom: 1px solid #2d3548;
         }
 
         .result-title {
-            font-size: 24px;
-            font-weight: bold;
-            margin-bottom: 15px;
-            text-align: center;
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 12px;
         }
 
-        .result-container.covid19 .result-title {
-            color: #ffc107;
-        }
-
-        .result-container.normal .result-title {
-            color: #28a745;
-        }
-
-        .result-container.pneumonia .result-title {
-            color: #dc3545;
-        }
-
-        .result-container.turberculosis .result-title {
-            color: #17a2b8;
-        }
-
-        .confidence {
-            text-align: center;
-            font-size: 18px;
-            color: #333;
-            margin-bottom: 20px;
-            font-weight: 600;
-        }
-
-        .all-predictions {
-            background: rgba(255, 255, 255, 0.7);
-            border-radius: 10px;
-            padding: 15px;
-            margin-top: 15px;
-        }
-
-        .all-predictions h3 {
+        .result-confidence {
             font-size: 16px;
-            color: #333;
-            margin-bottom: 10px;
-            text-align: center;
+            color: #a1a1aa;
+        }
+
+        .predictions-grid {
+            display: grid;
+            gap: 12px;
         }
 
         .prediction-item {
+            background: #252b3b;
+            border-radius: 8px;
+            padding: 16px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 8px 0;
-            border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+            border: 1px solid #2d3548;
+            transition: all 0.2s ease;
         }
 
-        .prediction-item:last-child {
-            border-bottom: none;
+        .prediction-item.primary {
+            border: 2px solid #3b82f6;
+            background: rgba(59, 130, 246, 0.1);
         }
 
         .prediction-label {
             font-weight: 600;
-            color: #333;
+            color: #f4f4f5;
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
 
         .prediction-value {
-            color: #666;
+            font-weight: 700;
+            font-size: 18px;
+        }
+
+        .result-normal .result-title {
+            color: #22c55e;
+        }
+
+        .result-normal .prediction-item.primary .prediction-value {
+            color: #22c55e;
+        }
+
+        .result-covid19 .result-title {
+            color: #f59e0b;
+        }
+
+        .result-covid19 .prediction-item.primary .prediction-value {
+            color: #f59e0b;
+        }
+
+        .result-pneumonia .result-title {
+            color: #ef4444;
+        }
+
+        .result-pneumonia .prediction-item.primary .prediction-value {
+            color: #ef4444;
+        }
+
+        .result-turberculosis .result-title {
+            color: #06b6d4;
+        }
+
+        .result-turberculosis .prediction-item.primary .prediction-value {
+            color: #06b6d4;
         }
 
         .loading {
             text-align: center;
-            padding: 20px;
+            padding: 40px 20px;
             display: none;
+        }
+
+        .loading.active {
+            display: block;
         }
 
         .spinner {
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid #667eea;
+            width: 50px;
+            height: 50px;
+            border: 4px solid #2d3548;
+            border-top: 4px solid #60a5fa;
             border-radius: 50%;
-            width: 40px;
-            height: 40px;
             animation: spin 1s linear infinite;
-            margin: 0 auto 10px;
+            margin: 0 auto 16px;
         }
 
         @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .loading-text {
+            color: #a1a1aa;
+            font-size: 16px;
         }
 
         .error-message {
-            background: #f8d7da;
-            color: #721c24;
-            padding: 15px;
-            border-radius: 10px;
-            margin-top: 20px;
+            background: rgba(239, 68, 68, 0.1);
+            color: #ef4444;
+            padding: 16px;
+            border-radius: 8px;
+            margin-top: 16px;
             display: none;
-            border: 1px solid #f5c6cb;
+            border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+
+        .error-message.active {
+            display: block;
+        }
+
+        .disclaimer {
+            background: #252b3b;
+            border-radius: 8px;
+            padding: 16px;
+            margin-top: 24px;
+            font-size: 13px;
+            color: #a1a1aa;
+            border-left: 3px solid #60a5fa;
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 40px;
+            padding: 20px;
+            color: #71717a;
+            font-size: 14px;
+        }
+
+        @media (max-width: 968px) {
+            .content-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .header h1 {
+                font-size: 32px;
+            }
         }
     </style>
 </head>
+
 <body>
     <div class="container">
-        <h1>🫁 Chest X-Ray Analysis</h1>
-        <p class="subtitle">วิเคราะห์ภาพเอ็กซเรย์ปอดด้วย AI</p>
-
-        <div class="upload-area" id="uploadArea">
-            <div class="upload-icon">📤</div>
-            <div class="upload-text">คลิกหรือลากไฟล์มาวางที่นี่</div>
-            <div class="upload-subtext">รองรับไฟล์ .jpg, .jpeg, .png (สูงสุด 16MB)</div>
-            <input type="file" id="fileInput" accept=".jpg,.jpeg,.png">
+        <!-- Header -->
+        <div class="header">
+            <h1>🩺 AI X-Ray Report Generator</h1>
         </div>
 
-        <div class="preview-container" id="previewContainer">
-            <img id="previewImage" class="preview-image" alt="Preview">
-            <div class="button-group">
-                <button class="analyze-btn" id="analyzeBtn">🔍 วิเคราะห์</button>
-                <button class="clear-btn" id="clearBtn">🗑️ ลบ</button>
+        <!-- Main Content Grid -->
+        <div class="content-grid">
+            <!-- Left Column: Upload & Clinical Info -->
+            <div>
+                <!-- Upload Section -->
+                <div class="section" id="uploadSection">
+                    <h2 class="section-title">📤 Upload X-Ray Images</h2>
+
+                    <div class="upload-area" id="uploadArea">
+                        <div class="upload-icon">🖼️</div>
+                        <div class="upload-text" id="uploadText">Choose files to upload</div>
+                        <div class="upload-subtext" id="uploadSubtext">or drag and drop</div>
+                        <input type="file" id="fileInput" accept=".jpg,.jpeg,.png">
+                    </div>
+                </div>
+
+                <!-- Preview Section -->
+                <div class="section" id="previewSection" style="margin-top: 10px; display: none;">
+                    <div class="preview-container" id="previewContainer">
+                        <div class="file-list-title">Selected Files:</div>
+                        <div class="file-item">
+                            <img id="fileThumbnail" class="file-thumbnail" alt="Thumbnail">
+                            <div class="file-info">
+                                <div class="file-name" id="fileName"></div>
+                                <div class="file-size" id="fileSize"></div>
+                            </div>
+                            <div class="file-actions">
+                                <button class="file-action-btn" id="viewBtn" title="View">🔍</button>
+                                <button class="file-action-btn" id="downloadBtn" title="Download">💾</button>
+                                <button class="file-action-btn" id="deleteBtn" title="Delete">🔄</button>
+                            </div>
+                        </div>
+                        <img id="previewImage" class="preview-image" alt="X-Ray Preview">
+                        <button class="analyze-btn" id="analyzeBtn">☀️ Analyze and Generate Report</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column: Results -->
+            <div>
+                <div class="result-section">
+                    <h2 class="section-title">📊 Generated Report</h2>
+
+                    <div class="loading" id="loading">
+                        <div class="spinner"></div>
+                        <p class="loading-text">Analyzing X-Ray images...</p>
+                    </div>
+
+                    <div class="result-placeholder" id="resultPlaceholder">
+                        <div class="result-placeholder-icon">🩺</div>
+                        <p style="margin-bottom: 12px; font-size: 16px;">Your report will appear here</p>
+                        <p style="font-size: 14px;">Upload one or more X-ray images and click "Analyze" to begin.</p>
+                    </div>
+
+                    <div class="result-content" id="resultContent">
+                        <div class="result-header">
+                            <div class="result-title" id="resultTitle"></div>
+                            <div class="result-confidence" id="resultConfidence"></div>
+                        </div>
+
+                        <div class="predictions-grid" id="predictionsGrid"></div>
+                    </div>
+
+                    <div class="error-message" id="errorMessage"></div>
+                </div>
+
+                <!-- Disclaimer -->
+                <div class="disclaimer">
+                    <strong>⚠️ Disclaimer:</strong> This is an AI-generated report for informational purposes only. It
+                    is not a substitute for professional medical advice. Always consult a qualified healthcare provider.
+                </div>
             </div>
         </div>
 
-        <div class="loading" id="loading">
-            <div class="spinner"></div>
-            <p>กำลังวิเคราะห์...</p>
+        <!-- Footer -->
+        <div class="footer">
+            <p>Powered by AI. For educational and research purposes only.</p>
         </div>
-
-        <div class="result-container" id="resultContainer">
-            <div class="result-title" id="resultTitle"></div>
-            <div class="confidence" id="confidence"></div>
-            <div class="all-predictions" id="allPredictions">
-                <h3>ความน่าจะเป็นทั้งหมด</h3>
-                <div id="predictionsList"></div>
-            </div>
-        </div>
-
-        <div class="error-message" id="errorMessage"></div>
     </div>
 
     <script>
         const uploadArea = document.getElementById('uploadArea');
+        const uploadSection = document.getElementById('uploadSection');
+        const previewSection = document.getElementById('previewSection');
         const fileInput = document.getElementById('fileInput');
         const previewContainer = document.getElementById('previewContainer');
         const previewImage = document.getElementById('previewImage');
+        const fileThumbnail = document.getElementById('fileThumbnail');
+        const fileName = document.getElementById('fileName');
+        const fileSize = document.getElementById('fileSize');
         const analyzeBtn = document.getElementById('analyzeBtn');
-        const clearBtn = document.getElementById('clearBtn');
+        const viewBtn = document.getElementById('viewBtn');
+        const downloadBtn = document.getElementById('downloadBtn');
+        const deleteBtn = document.getElementById('deleteBtn');
         const loading = document.getElementById('loading');
-        const resultContainer = document.getElementById('resultContainer');
+        const resultPlaceholder = document.getElementById('resultPlaceholder');
+        const resultContent = document.getElementById('resultContent');
         const resultTitle = document.getElementById('resultTitle');
-        const confidence = document.getElementById('confidence');
+        const resultConfidence = document.getElementById('resultConfidence');
+        const predictionsGrid = document.getElementById('predictionsGrid');
         const errorMessage = document.getElementById('errorMessage');
-        const predictionsList = document.getElementById('predictionsList');
+        const uploadText = document.getElementById('uploadText');
+        const uploadSubtext = document.getElementById('uploadSubtext');
 
         let selectedFile = null;
 
-        // กำหนดข้อความและไอคอนสำหรับแต่ละ class
         const classInfo = {
             'COVID19': { emoji: '🦠', text: 'COVID-19', class: 'covid19' },
-            'NORMAL': { emoji: '✅', text: 'ปกติ (Normal)', class: 'normal' },
-            'PNEUMONIA': { emoji: '⚠️', text: 'ปอดอักเสบ (Pneumonia)', class: 'pneumonia' },
-            'TURBERCULOSIS': { emoji: '🫁', text: 'วัณโรค (Tuberculosis)', class: 'turberculosis' }
+            'NORMAL': { emoji: '✅', text: 'Normal', class: 'normal' },
+            'PNEUMONIA': { emoji: '⚠️', text: 'Pneumonia', class: 'pneumonia' },
+            'TURBERCULOSIS': { emoji: '🫁', text: 'Tuberculosis', class: 'turberculosis' }
         };
 
-        // คลิกที่ upload area
+        // Upload area click
         uploadArea.addEventListener('click', () => {
             fileInput.click();
         });
 
-        // เลือกไฟล์
+        // File selection
         fileInput.addEventListener('change', (e) => {
             handleFile(e.target.files[0]);
         });
@@ -356,43 +624,50 @@
         function handleFile(file) {
             if (!file) return;
 
-            // ตรวจสอบประเภทไฟล์
             const validTypes = ['image/jpeg', 'image/jpg', 'image/png'];
             if (!validTypes.includes(file.type)) {
-                showError('กรุณาเลือกไฟล์ .jpg, .jpeg หรือ .png เท่านั้น');
+                showError('Please select a .jpg, .jpeg or .png file only');
                 return;
             }
 
-            // ตรวจสอบขนาดไฟล์ (16MB)
             if (file.size > 16 * 1024 * 1024) {
-                showError('ไฟล์มีขนาดใหญ่เกินไป (สูงสุด 16MB)');
+                showError('File is too large (maximum 16MB)');
                 return;
             }
 
             selectedFile = file;
-            
-            // แสดง preview
+
             const reader = new FileReader();
             reader.onload = (e) => {
-                previewImage.src = e.target.result;
+                const imageData = e.target.result;
+
+                // Set thumbnail and full preview
+                fileThumbnail.src = imageData;
+                previewImage.src = imageData;
+
+                // Set file info
+                fileName.textContent = file.name;
+                fileSize.textContent = formatFileSize(file.size);
+
+                // Show preview section (keep upload section visible)
                 previewContainer.style.display = 'block';
-                resultContainer.style.display = 'none';
-                errorMessage.style.display = 'none';
+                previewSection.style.display = 'block';
+
+                hideResults();
+                hideError();
             };
             reader.readAsDataURL(file);
         }
 
-        // ปุ่มวิเคราะห์
+        // Analyze button
         analyzeBtn.addEventListener('click', async () => {
             if (!selectedFile) return;
 
             const formData = new FormData();
             formData.append('file', selectedFile);
 
-            // แสดง loading
-            loading.style.display = 'block';
-            resultContainer.style.display = 'none';
-            errorMessage.style.display = 'none';
+            showLoading();
+            hideError();
             analyzeBtn.disabled = true;
 
             try {
@@ -402,71 +677,128 @@
                 });
 
                 const data = await response.json();
-                
-                // Debug: แสดงข้อมูลที่ได้รับจาก API
-                console.log('📊 ข้อมูลจาก API:', data);
-                console.log('📊 prediction:', data.prediction);
-                console.log('📊 confidence:', data.confidence);
-                console.log('📊 all_predictions:', data.all_predictions);
 
                 if (response.ok) {
-                    // แสดงผลลัพธ์
-                    resultContainer.classList.remove('covid19', 'normal', 'pneumonia', 'turberculosis');
-                    
-                    // ตั้งค่าผลลัพธ์หลัก
-                    const info = classInfo[data.prediction];
-                    if (info) {
-                        resultContainer.classList.add(info.class);
-                        resultTitle.textContent = `${info.emoji} ${info.text}`;
-                    }
-                    
-                    // แสดงความน่าจะเป็นทั้งหมด
-                    if (data.all_predictions) {
-                        predictionsList.innerHTML = '';
-                        Object.entries(data.all_predictions).forEach(([className, value]) => {
-                            const item = document.createElement('div');
-                            item.className = 'prediction-item';
-                            
-                            const label = document.createElement('span');
-                            label.className = 'prediction-label';
-                            const info = classInfo[className];
-                            label.textContent = info ? `${info.emoji} ${info.text}` : className;
-                            
-                            const valueSpan = document.createElement('span');
-                            valueSpan.className = 'prediction-value';
-                            valueSpan.textContent = `${value}%`;
-                            
-                            item.appendChild(label);
-                            item.appendChild(valueSpan);
-                            predictionsList.appendChild(item);
-                        });
-                    }
-                    
-                    resultContainer.style.display = 'block';
+                    displayResults(data);
                 } else {
-                    showError(data.error || 'เกิดข้อผิดพลาดในการวิเคราะห์');
+                    showError(data.error || 'An error occurred during analysis');
                 }
             } catch (error) {
-                showError('ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้');
+                showError('Unable to connect to server');
             } finally {
-                loading.style.display = 'none';
+                hideLoading();
                 analyzeBtn.disabled = false;
             }
         });
 
-        // ปุ่มลบ
-        clearBtn.addEventListener('click', () => {
+        // View button - toggle full image
+        viewBtn.addEventListener('click', () => {
+            if (previewImage.style.display === 'none' || !previewImage.style.display) {
+                previewImage.style.display = 'block';
+            } else {
+                previewImage.style.display = 'none';
+            }
+        });
+
+        // Download button
+        downloadBtn.addEventListener('click', () => {
+            const link = document.createElement('a');
+            link.href = previewImage.src;
+            link.download = selectedFile.name;
+            link.click();
+        });
+
+        // Delete button
+        deleteBtn.addEventListener('click', () => {
             selectedFile = null;
             fileInput.value = '';
             previewContainer.style.display = 'none';
-            resultContainer.style.display = 'none';
-            errorMessage.style.display = 'none';
+            previewImage.style.display = 'none';
+
+            // Hide preview section only
+            previewSection.style.display = 'none';
+
+            hideResults();
+            hideError();
         });
+
+        // Format file size helper
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + ' ' + sizes[i];
+        }
+
+        function displayResults(data) {
+            const info = classInfo[data.prediction];
+
+            // Set result class for styling
+            resultContent.className = 'result-content active';
+            if (info) {
+                resultContent.classList.add(`result-${info.class}`);
+            }
+
+            // Set title and confidence
+            resultTitle.textContent = info ? `${info.emoji} ${info.text}` : data.prediction;
+            resultConfidence.textContent = `Confidence: ${data.confidence}%`;
+
+            // Display all predictions
+            predictionsGrid.innerHTML = '';
+            if (data.all_predictions) {
+                const sortedPredictions = Object.entries(data.all_predictions)
+                    .sort((a, b) => b[1] - a[1]);
+
+                sortedPredictions.forEach(([className, value]) => {
+                    const classData = classInfo[className];
+                    const isPrimary = className === data.prediction;
+
+                    const item = document.createElement('div');
+                    item.className = `prediction-item ${isPrimary ? 'primary' : ''}`;
+
+                    const label = document.createElement('span');
+                    label.className = 'prediction-label';
+                    label.textContent = classData ? `${classData.emoji} ${classData.text}` : className;
+
+                    const valueSpan = document.createElement('span');
+                    valueSpan.className = 'prediction-value';
+                    valueSpan.textContent = `${value}%`;
+
+                    item.appendChild(label);
+                    item.appendChild(valueSpan);
+                    predictionsGrid.appendChild(item);
+                });
+            }
+
+            resultPlaceholder.style.display = 'none';
+            resultContent.style.display = 'block';
+        }
+
+        function showLoading() {
+            loading.classList.add('active');
+            resultPlaceholder.style.display = 'none';
+            resultContent.style.display = 'none';
+        }
+
+        function hideLoading() {
+            loading.classList.remove('active');
+        }
+
+        function hideResults() {
+            resultContent.style.display = 'none';
+            resultPlaceholder.style.display = 'block';
+        }
 
         function showError(message) {
             errorMessage.textContent = message;
-            errorMessage.style.display = 'block';
+            errorMessage.classList.add('active');
+        }
+
+        function hideError() {
+            errorMessage.classList.remove('active');
         }
     </script>
 </body>
+
 </html>
